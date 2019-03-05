@@ -5,7 +5,7 @@ Holds code and Cloudformation Teamplate for AWS Health Events to Slack Lambda Fu
 This parses the health feed and uses DynamoDB as checkpoint before sending a message to Slack channel.
 
 # Pre-Requisites 
-* Generate a Slack Webhook Token and Store in SSM as `/versent/health/hook` or a parameter of your choice. Check this link for generating Slack Webhook https://api.slack.com/incoming-webhooks
+* Generate a Slack Webhook Token and Store in SSM as `/company/health/hook` or a parameter of your choice. Check this link for generating Slack Webhook https://api.slack.com/incoming-webhooks
 * This functions required feedparser module to scrape the RSS feed and is using layer functionality to reduce the bundled size.
 * You can bundle it with your function as needed. Refer https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path
 * Only dependency captured in the layer is feedparser.
