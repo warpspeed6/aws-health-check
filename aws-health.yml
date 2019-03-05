@@ -129,7 +129,7 @@ Resources:
                   }
                   logger.info(str(slack_message))
                   ssm = boto3.client('ssm')
-                  parameter = ssm.get_parameter(Name='/versent/health/hook')
+                  parameter = ssm.get_parameter(Name='/company/health/hook')
                   print (parameter['Parameter']['Value'])
                   req = Request(
                       parameter['Parameter']['Value'],
@@ -195,7 +195,7 @@ Resources:
               - ssm:GetParametersByPath
               - ssm:GetParameters
               - ssm:GetParameter
-            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/versent/health/hook          
+            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/company/health/hook          
       Roles:
         -
           !Ref AWSHEALTHLAMBDAROLE
