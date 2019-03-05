@@ -22,7 +22,7 @@ zip -r aws-health.zip python
 Create a Lambda layer using UI or CLI as needed and reference it in the CF Template.
 
 # Operation
-* It scraps the http://status.aws.amazon.com/rss/
+* It scraps the http://status.aws.amazon.com/rss/all.rss
 * It checks the service and the message in the DynamoDB table.
 * If its a different Key Value Pair combo, a message is sent to Slack.
 * It then updates the DynamoDB Table with Service Name and current Message.
