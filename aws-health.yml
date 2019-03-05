@@ -1,11 +1,10 @@
 
 AWSTemplateFormatVersion: '2010-09-09'
-Description: AWS health function for outputting health events to Slack Channel
+Description: AWS health function for outputting health events to Slack Channel 
 Resources:
   AWSHEALTHLAMBDA:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: aws-health-function
       Handler: index.handler
       Runtime: python2.7
       Layers:
@@ -216,6 +215,22 @@ Resources:
       ProvisionedThroughput: 
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
-      Tags:
-        - Key: foo
-          Value: bar
+  AWSHEALTHDDBRule:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: Rule to fire the health check lambda function
+      ScheduleExpression: rate(5 minutes)
+      Targets:
+        -
+          Arn: 
+            Fn::GetAtt: 
+              - "AWSHEALTHLAMBDA"
+              - "Arn"
+          Id: "12345"
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AWSHEALTHLAMBDA
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AWSHEALTHDDBRule.Arn
