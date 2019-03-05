@@ -12,7 +12,7 @@ This parses the health feed and uses DynamoDB as checkpoint before sending a mes
 
 # What you should know
 * You could use sam or any other choice of tooling. I really wanted to learn about lambda layers and took this work as a challenge but feel free to submit a PR and polish it.
-* I understand I can handle exceptions better. :)
+* I understand I can handle exceptions better. :smile:
 
 ```
 mkdir python
