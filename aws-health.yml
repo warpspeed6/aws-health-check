@@ -1,0 +1,221 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS health function for outputting health events to Slack Channel
+Resources:
+  AWSHEALTHLAMBDA:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: aws-health-function
+      Handler: index.handler
+      Runtime: python2.7
+      Layers:
+        - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:aws-health-layer:2
+      Description: AWS health function which outputs to Slack
+      Code:
+        ZipFile: |
+          #!/usr/bin/env python26
+
+          import json
+          import os
+          import logging
+          from urllib2 import Request, urlopen, URLError, HTTPError
+          import boto3
+          import botocore
+          import feedparser
+
+          # Setting up logging
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+
+          def handler(event, context):
+              '''
+              Lambda Function
+              '''
+
+              # Parse the feed and return value from the first entry.
+              try:
+                  d = feedparser.parse(
+                      'http://status.aws.amazon.com/rss/' +
+                      'all' +
+                      '.rss')
+                  if d.entries:
+                      title = d.entries[0]['title']
+                      dsc = d.entries[0]['description']
+                      service = d.entries[0]['id'].split(
+                          "#")[1].split("-")[0].split("_")[0]
+                      updated = d.updated.replace(
+                          ' ',
+                          '').replace(
+                          ',',
+                          '').replace(
+                          ':',
+                          '')
+                      region = d.entries[0]['description'].split(
+                          "in the")[1].split("Region")[0]
+                      print(region)
+                  elif d['feed']['title']:
+                      print('AWS OK: No events to display.')
+                      exit(0)
+              except KeyError:
+                  print('AWS UNKNOWN: Feed http://status.aws.amazon.com/rss/' +
+                        feed + '.rss could not be parsed. Check command options.')
+                  exit(3)
+
+              # Determine the state of the feed
+              if title.startswith("Service is operating normally"):
+                  msg = " "
+                  color = "#44a64f"
+              elif (title.startswith("Informational message") or title.startswith("Performance issues")):
+                  msg = " "
+                  color = "#FFE4B5"
+              elif (title.startswith("Service disruption")):
+                  msg = " "
+                  color = "#FF0000"
+              else:
+                  msg = "AWS UNKNOWN: "
+                  color = "#44a64f"
+
+              msg += title.split(":")[1]
+              print(msg)
+              print(dsc)
+              print(updated)
+
+          # Check the DDB checkpoint if this already exists
+              dynamodb = boto3.client('dynamodb')
+              try:
+                  response = dynamodb.get_item(
+                      TableName='aws-health-checkpoint-table',
+                      Key={
+                          'service': {
+                              'S': str(service)}})
+                  existing_message = response['Item']['message']['S']
+                  print(existing_message)
+              except KeyError as e:
+                  existing_message = "NULL"
+                  pass
+
+
+          # Lets update the DDB with new event
+              response = dynamodb.update_item(
+                  TableName='aws-health-checkpoint-table',
+                  Key={
+                      "service": {
+                          "S": service}},
+                  ReturnConsumedCapacity='TOTAL',
+                  ReturnItemCollectionMetrics='SIZE',
+                  UpdateExpression="set message = :r",
+                  ExpressionAttributeValues={
+                      ':r': {
+                          'S': msg}},
+                  ReturnValues="UPDATED_NEW")
+              updated_message = response['Attributes']['message']['S']
+              print(updated_message)
+
+              # Did we update the message in DDB?
+              if updated_message != existing_message:
+                  json.dumps(updated_message)
+                  # Format region to keep json happy
+                  region = "*" + region + "*"
+                  region = region.replace(" ", "")
+                  slack_message = {
+                      "text": region,
+                      "channel": "aws-alerts-test",
+                      "attachments": [
+                          {
+                              "text": service.upper() + " " + updated_message,
+                              "color": color
+                          }
+                      ]
+                  }
+                  logger.info(str(slack_message))
+                  ssm = boto3.client('ssm')
+                  parameter = ssm.get_parameter(Name='/versent/health/hook')
+                  print (parameter['Parameter']['Value'])
+                  req = Request(
+                      parameter['Parameter']['Value'],
+                      json.dumps(slack_message))
+
+                  try:
+                      response = urlopen(req)
+                      response.read()
+                      logger.info("Message posted to %s", slack_message['channel'])
+                  except HTTPError as e:
+                      logger.error("Request failed : %d %s", e.code, e.reason)
+                  except URLError as e:
+                      logger.error("Server connection failed: %s", e.reason)
+
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt AWSHEALTHLAMBDAROLE.Arn
+  AWSHEALTHLAMBDAROLE:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: !Sub aws-health-lambda-role-${AWS::Region}
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            -
+              Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Path: /
+  AWSHEALTHLAMBDAPOLICY:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub aws-health-lambda-role-policy-${AWS::Region}
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - dynamodb:*
+            Resource:
+              - !Sub arn:aws:dynamodb:*:*:table/${AWSHEALTHDDBTable}
+              - !Sub arn:aws:dynamodb:*:*:table/${AWSHEALTHDDBTable}/*
+          -
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+          -
+            Effect: Allow
+            Action:
+              - ssm:DescribeParameters
+            Resource: "*"
+          -
+            Effect: Allow
+            Action:
+              - ssm:GetParameterHistory
+              - ssm:GetParametersByPath
+              - ssm:GetParameters
+              - ssm:GetParameter
+            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/versent/health/hook          
+      Roles:
+        -
+          !Ref AWSHEALTHLAMBDAROLE
+  AWSHEALTHDDBTable: 
+    Type: AWS::DynamoDB::Table
+    DependsOn: "AWSHEALTHLAMBDAROLE"
+    Properties:
+      TableName: "aws-health-checkpoint-table"
+      AttributeDefinitions: 
+        - 
+          AttributeName: "service"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "service"
+          KeyType: "HASH"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      Tags:
+        - Key: foo
+          Value: bar
