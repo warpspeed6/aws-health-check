@@ -1,5 +1,5 @@
-# aws-health-slack
-Holds code and Cloudformation Teamplate for AWS Health Events to Slack Lambda Function. PHD or Personal Health Dashboard does not provide Issue Notifications hence this work!
+# aws-health-slack (Specially to know about issues like IAM, R53 Error Rates)
+Holds code and Cloudformation Teamplate for AWS Health Events to Slack Lambda Function. PHD or Personal Health Dashboard does not provide Issue Notifications hence the need!
 
 # What it does
 This parses the health feed and uses DynamoDB as checkpoint before sending a message to Slack channel.
