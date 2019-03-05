@@ -1,5 +1,5 @@
 # aws-health-slack
-Holds code for AWS Health Events to Slack Lambda
+Holds code and Cloudformation Teamplate for AWS Health Events to Slack Lambda Function. 
 
 # What it does
 This parses the health feed and uses DynamoDB as checkpoint before sending a message to Slack channel.
