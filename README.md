@@ -5,11 +5,11 @@ Holds code for AWS Health Events to Slack Lambda
 * Generate a Slack Webhook Token and Store in SSM as `/versent/health/hook`
 * This functions required feedparser module and is using layer functionality to use it. You can bundle it with your function as needed. Refer https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path
 Only dependency captured in the layet is feedparser.
-`
+```
 mkdir python
 pip install feedparser -t python
 zip -r aws-health.zip python
-`
+```
 Create a layer using UI or CLI as needed.
 
 # Operation
