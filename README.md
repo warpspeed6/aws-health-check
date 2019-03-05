@@ -24,5 +24,5 @@ Create a Lambda layer using UI or CLI as needed and reference it in the CF Templ
 
 # Result
 
-![alt text](https://raw.githubusercontent.com/Versent/aws-health-slack/blob/master/sample.png)
+![Profit](/sample.png)
 
