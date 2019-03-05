@@ -12,7 +12,6 @@ Resources:
       Description: AWS health function which outputs to Slack
       Code:
         ZipFile: |
-          #!/usr/bin/env python26
 
           import json
           import os
