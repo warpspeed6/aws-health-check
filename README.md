@@ -4,10 +4,16 @@ Holds code for AWS Health Events to Slack Lambda
 # What it does
 This parses the health feed and uses DynamoDB as checkpoint before sending a message to Slack channel.
 
-# Pre-Requisites:
-* Generate a Slack Webhook Token and Store in SSM as `/versent/health/hook`
-* This functions required feedparser module and is using layer functionality to use it. You can bundle it with your function as needed. Refer https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path
-Only dependency captured in the layet is feedparser.
+# Pre-Requisites 
+* Generate a Slack Webhook Token and Store in SSM as `/versent/health/hook` or a parameter of your choice. Check this link for generating Slack Webhook https://api.slack.com/incoming-webhooks
+* This functions required feedparser module to scrape the RSS feed and is using layer functionality to reduce the bundled size.
+* You can bundle it with your function as needed. Refer https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-path
+* Only dependency captured in the layer is feedparser.
+
+# What you should know
+* You could use sam or any other choice of tooling. I really wanted to learn about lambda layers and took this work as a challenge but feel free to submit a PR and polish it.
+* I understand I can handle exceptions better. :)
+
 ```
 mkdir python
 pip install feedparser -t python
