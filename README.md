@@ -12,7 +12,6 @@ This parses the health feed and uses DynamoDB as checkpoint before sending a mes
 
 # What you should know
 * You could use sam or any other choice of tooling. I really wanted to learn about lambda layers and took this work as a challenge but feel free to submit a PR and polish it.
-* I understand I can handle exceptions better. :smile:
 
 ```
 mkdir python
@@ -20,6 +19,8 @@ pip install feedparser -t python
 zip -r aws-health.zip python
 ```
 Create a Lambda layer using UI or CLI as needed and reference it in the CF Template.
+* I understand I can handle exceptions better. :smile:
+
 
 # Operation
 * It scraps the http://status.aws.amazon.com/rss/all.rss
